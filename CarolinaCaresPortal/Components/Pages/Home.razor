@@ -1,0 +1,118 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject IMongoDbAccessService _iMongoDbAccessService
+
+<PageTitle>Customers</PageTitle>
+
+<h4>Customers</h4>
+    
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        <RadzenLabel Text="First Name" Component="firstNameNewCustomer" />
+        <RadzenTextBox @bind-Value=@firstNameNewCustomer Style="width: 100%; max-width: 400px;" Name="firstNameNewCustomer" />
+    </RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        <RadzenLabel Text="Last Name" Component="lastNameNewCustomer" />
+        <RadzenTextBox @bind-Value=@lastNameNewCustomer Style="width: 100%; max-width: 400px;" Name="lastNameNewCustomer" />
+    </RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        <RadzenLabel Text="Family Size" Component="familySizeNewCustomer" />
+        <RadzenNumeric Min="1"
+                       Max="9"
+                       @bind-Value=@familySizeNewCustomer
+                       InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "enter value" } })" Name="familySizeNewCustomer" />
+    </RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        <RadzenLabel Text="Street Address" Component="streetInfoAddressNewCustomer" />
+        <RadzenTextBox @bind-Value=@streetInfoAddressNewCustomer Style="width: 100%; max-width: 400px;" Name="streetInfoAddressNewCustomer" />
+    </RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        <RadzenLabel Text="City Address" Component="cityAddressNewCustomer" />
+        <RadzenTextBox @bind-Value=@cityAddressNewCustomer Style="width: 100%; max-width: 400px;" Name="cityAddressNewCustomer" />
+    </RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        <RadzenLabel Text="Phone Number" Component="phoneNumberNewCustomer" />
+        <RadzenTextBox @bind-Value=@phoneNumberNewCustomer Style="width: 100%; max-width: 400px;" Name="phoneNumberNewCustomer" />
+    </RadzenStack>
+
+<RadzenButton Text="Add User" Click=@(args => AddNewCustomer()) Style="width: 150px" />
+
+<p>@statusMessage</p>
+
+@code{
+
+    [PersistentState]
+    public bool? dejaVuFlag { get; set; }
+
+    string firstNameNewCustomer;
+    string lastNameNewCustomer;
+    string streetInfoAddressNewCustomer;
+    string cityAddressNewCustomer;
+    string phoneNumberNewCustomer;
+    int familySizeNewCustomer;
+
+    private string statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (dejaVuFlag is null) // first time here so skip pulling data from Db
+        {
+            dejaVuFlag = true;
+        }
+        else
+        {
+            RetrieveListOfCustomers();
+            SetDummyCustomerData();
+        }
+    }
+
+    private void SetDummyCustomerData()
+    {
+        firstNameNewCustomer = "Johnny";
+        lastNameNewCustomer = "Cakes";
+        familySizeNewCustomer = 7;
+        cityAddressNewCustomer = "101 Bakers Lane";
+        streetInfoAddressNewCustomer = "BakersVille, TN";
+        phoneNumberNewCustomer = "555.111.2222222";
+    }
+
+    private void AddNewCustomer()
+    {
+        var customer = new Customer();
+        customer.FirstName = firstNameNewCustomer;
+        customer.LastName = lastNameNewCustomer;
+        customer.FamilySize = familySizeNewCustomer;
+        customer.PhoneNumber = phoneNumberNewCustomer;
+
+        var customerAddress = new AddressRecord();
+        customerAddress.City = cityAddressNewCustomer;     
+        customerAddress.StreetInfo = streetInfoAddressNewCustomer;
+        customer.Address = customerAddress;        
+
+        ResponseStatus response = _iMongoDbAccessService.CreateCustomerRecord(customer);
+
+        statusMessage = response.StatusMessage;
+        ClearNewCustomerFields();
+    }
+
+    private void ClearNewCustomerFields()
+    {
+        firstNameNewCustomer = string.Empty;
+        lastNameNewCustomer = string.Empty;
+        familySizeNewCustomer = 0;
+        cityAddressNewCustomer = string.Empty;
+        streetInfoAddressNewCustomer = string.Empty;
+        phoneNumberNewCustomer = string.Empty;
+    }
+
+    private void RetrieveListOfCustomers()
+    {
+        
+    }
+
+}
