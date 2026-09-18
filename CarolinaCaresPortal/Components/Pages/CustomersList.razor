@@ -1,0 +1,53 @@
+﻿@page "/customersList"
+
+@rendermode InteractiveServer
+@inject IMongoDbAccessService _iMongoDbAccessService
+
+<h3>Customers</h3>
+
+<RadzenDataList AllowVirtualization=@allowVirtualization Style="@(allowVirtualization ? "height:400px;overflow:auto;" : "")"
+                WrapItems="@(!allowVirtualization)" AllowPaging="@(!allowVirtualization)" ShowEmptyMessage
+                Data="@AllCustomers" TItem="Customer" PageSize="5" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
+    <EmptyTemplate>No records found</EmptyTemplate>
+    <Template Context="customer">
+        <RadzenCard Variant="Variant.Outlined" class="rz-p-0" Style="width: 100%; overflow: hidden;">
+            <RadzenRow class="rz-text-align-center" Gap="0">
+                <RadzenColumn Size="2" class="rz-p-4 rz-color-on-secondary-lighter rz-border rz-border-color-series-3" Style="--rz-border-width: 5px">
+                    <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5">@(customer.FirstName) @(customer.LastName)</RadzenText>
+                </RadzenColumn>
+
+
+            </RadzenRow>
+        </RadzenCard>
+    </Template>
+</RadzenDataList>
+
+<p>@statusMessage</p>
+
+@code {
+    bool allowVirtualization;
+    string statusMessage = string.Empty;
+
+    List<Customer>? AllCustomers { get; set; }
+
+    [PersistentState]
+    public bool? dejaVuFlag { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // if (dejaVuFlag is null) // first time here so skip pulling data from Db
+        // {
+        //     dejaVuFlag = true;
+        // }
+        // else
+        // {
+             RetrieveListOfCustomers();
+        // }
+
+    }
+
+    private void RetrieveListOfCustomers()
+    {
+        AllCustomers = _iMongoDbAccessService.GetCustomers();
+    }
+}

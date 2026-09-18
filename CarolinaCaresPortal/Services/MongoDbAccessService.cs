@@ -110,6 +110,38 @@ namespace CarolinaCaresPortal.Services
 
             return responseStatus;
         }
+
+        public List<Customer> GetCustomers()
+        {
+            IMongoCollection<Customer> customers = iMongoDatabase!.GetCollection<Customer>(MongoDbAccessServiceConstants.CustomersCollectionName);
+
+            try
+            {
+                List<Customer> documents = customers.Find(Builders<Customer>.Filter.Empty).ToList();
+                return documents;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.Message + ":::" + ex.StackTrace);
+                return [];
+            }
+        }
+
+        public List<FoodPantry> GetFoodPantries()
+        {
+            IMongoCollection<FoodPantry> pantries = iMongoDatabase!.GetCollection<FoodPantry>(MongoDbAccessServiceConstants.FoodPantriesCollectionName);
+
+            try
+            {
+                List<FoodPantry> documents = pantries.Find(Builders<FoodPantry>.Filter.Empty).ToList();
+                return documents;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.Message + ":::" + ex.StackTrace);
+                return [];
+            }
+        }
     }
 
     public static class MongoDbAccessServiceConstants
