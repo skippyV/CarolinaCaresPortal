@@ -41,6 +41,7 @@ namespace CarolinaCaresPortal.Services
                 IMongoCollection<Customer> customers = iMongoDatabase!.GetCollection<Customer>(MongoDbAccessServiceConstants.CustomersCollectionName);
 
                 FilterDefinitionBuilder<Customer> filterBuilder = Builders<Customer>.Filter;
+
                 FilterDefinition<Customer> filter = filterBuilder.Eq(g => g.LastName, newCustomer.LastName)
                                                     & filterBuilder.Eq(g => g.FirstName, newCustomer.FirstName)
                                                     & filterBuilder.Eq(g => g.PhoneNumber, newCustomer.PhoneNumber);
@@ -58,6 +59,45 @@ namespace CarolinaCaresPortal.Services
                 else
                 {
                     responseStatus.StatusMessage = $"Customer {newCustomer.FirstName} {newCustomer.LastName} already exists! No changes made.";
+                    responseStatus.DbActionStatus = DbInfoDetails.noChangesMade;
+                }
+            }
+            catch (Exception ex)
+            {
+                responseStatus.DbActionStatus = DbInfoDetails.errorOccurred;
+                responseStatus.StatusMessage = ex.Message + ":::" + ex.StackTrace;
+                Log.Error(responseStatus.StatusMessage);
+            }
+
+            return responseStatus;
+        }
+
+        public ResponseStatus CreatePantryRecord(FoodPantry newPantry)
+        {
+            ResponseStatus responseStatus = new(); // defaults to Success=false, DbActionStatus=DbInfoDetails.notApplicable
+
+            try
+            {
+                IMongoCollection<FoodPantry> pantries = iMongoDatabase!.GetCollection<FoodPantry>(MongoDbAccessServiceConstants.FoodPantriesCollectionName);
+
+                FilterDefinitionBuilder<FoodPantry> filterBuilder = Builders<FoodPantry>.Filter;
+
+                FilterDefinition<FoodPantry> filter = filterBuilder.Eq(g => g.Name, newPantry.Name)
+                                                    & filterBuilder.Eq(g => g.PhoneNumber, newPantry.PhoneNumber);
+
+                List<FoodPantry> results = pantries.Find(filter).ToList();
+
+                if (results.Count == 0) // no record found so create one
+                {
+                    pantries.InsertOne(newPantry);
+                    responseStatus.StatusMessage = $"Food Pantry {newPantry.Name} was created!";
+                    responseStatus.DbActionStatus = DbInfoDetails.recordUpdated;
+
+                    Log.Information(responseStatus.StatusMessage);
+                }
+                else
+                {
+                    responseStatus.StatusMessage = $"Food Pantry {newPantry.Name} already exists! No changes made.";
                     responseStatus.DbActionStatus = DbInfoDetails.noChangesMade;
                 }
             }

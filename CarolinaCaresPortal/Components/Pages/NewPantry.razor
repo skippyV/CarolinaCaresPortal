@@ -1,0 +1,115 @@
+﻿@page "/newPantry"
+@rendermode InteractiveServer
+@inject IMongoDbAccessService _iMongoDbAccessService
+
+<PageTitle>Add New Pantry</PageTitle>
+
+<h4>Add New Pantry</h4>
+    
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+    <RadzenLabel Text="Pantry Name" Component="nameNewPantry" />
+    <RadzenTextBox @bind-Value=@nameNewPantry Style="width: 100%; max-width: 400px;" Name="nameNewPantry" />
+    </RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+    <RadzenLabel Text="Day of Week" Component="dayOfWeekNewPantry" />
+    <RadzenTextBox @bind-Value=@dayOfWeekNewPantry Style="width: 100%; max-width: 400px;" Name="dayOfWeekNewPantry" />
+    </RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+    <RadzenLabel Text="Time of Day" Component="timeOfDayNewPantry" />
+    <RadzenTextBox @bind-Value=@timeOfDayNewPantry Style="width: 100%; max-width: 400px;" Name="timeOfDayNewPantry" />
+</RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+    <RadzenLabel Text="Street Address" Component="streetInfoAddressNewPantry" />
+    <RadzenTextBox @bind-Value=@streetInfoAddressNewPantry Style="width: 100%; max-width: 400px;" Name="streetInfoAddressNewPantry" />
+    </RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+    <RadzenLabel Text="City" Component="cityAddressNewPantry" />
+    <RadzenTextBox @bind-Value=@cityAddressNewPantry Style="width: 100%; max-width: 400px;" Name="cityAddressNewPantry" />
+    </RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+    <RadzenLabel Text="Phone Number" Component="phoneNumberNewPantry" />
+    <RadzenTextBox @bind-Value=@phoneNumberNewPantry Style="width: 100%; max-width: 400px;" Name="phoneNumberNewPantry" />
+    </RadzenStack>
+
+<RadzenButton Text="Add Pantry" Click=@(args => AddNewPantry()) Style="width: 150px" />
+
+<p>@statusMessage</p>
+
+@code{
+
+    [PersistentState]
+    public bool? dejaVuFlag { get; set; }
+
+    string nameNewPantry;
+    string streetInfoAddressNewPantry;
+    string cityAddressNewPantry;
+    string phoneNumberNewPantry;
+    string dayOfWeekNewPantry;
+    string timeOfDayNewPantry;
+
+    private string statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (dejaVuFlag is null) // first time here so skip pulling data from Db
+        {
+            dejaVuFlag = true;
+        }
+        else
+        {
+            RetrieveListOfPantries();
+            SetDummyPantryData();
+        }
+    }
+
+    private void SetDummyPantryData()
+    {
+        nameNewPantry = "St Scooby";
+        streetInfoAddressNewPantry = "101 Church St";
+        cityAddressNewPantry = "ThumpersVille, TX";
+        phoneNumberNewPantry = "555.111.8888";
+        dayOfWeekNewPantry = "Monday, Wednesday";
+        timeOfDayNewPantry = "1pm";
+    }
+
+    private void AddNewPantry()
+    {
+        var pantry = new FoodPantry();
+        pantry.Name = nameNewPantry;
+        pantry.PhoneNumber = phoneNumberNewPantry;
+        pantry.DayOfWeek = dayOfWeekNewPantry;
+        pantry.TimeOfDay = timeOfDayNewPantry;
+
+        var pantryAddress = new AddressRecord();
+        pantryAddress.City = cityAddressNewPantry;
+        pantryAddress.StreetInfo = streetInfoAddressNewPantry;
+        pantry.Address = pantryAddress;        
+
+        ResponseStatus response = _iMongoDbAccessService.CreatePantryRecord(pantry);
+
+        statusMessage = response.StatusMessage;
+        ClearNewCustomerFields();
+    }
+
+    private void ClearNewCustomerFields()
+    {
+        nameNewPantry = string.Empty;
+        dayOfWeekNewPantry = string.Empty;
+        timeOfDayNewPantry = string.Empty;
+        cityAddressNewPantry = string.Empty;
+        streetInfoAddressNewPantry = string.Empty;
+        phoneNumberNewPantry = string.Empty;
+    }
+
+    private void RetrieveListOfPantries()
+    {
+        
+    }
+
+}

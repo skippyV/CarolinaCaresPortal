@@ -2,9 +2,9 @@
 @rendermode InteractiveServer
 @inject IMongoDbAccessService _iMongoDbAccessService
 
-<PageTitle>Customers</PageTitle>
+<PageTitle>Add New Customer</PageTitle>
 
-<h4>Customers</h4>
+<h4>Add New Customer</h4>
     
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
@@ -31,7 +31,7 @@
     </RadzenStack>
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
-        <RadzenLabel Text="City Address" Component="cityAddressNewCustomer" />
+        <RadzenLabel Text="City" Component="cityAddressNewCustomer" />
         <RadzenTextBox @bind-Value=@cityAddressNewCustomer Style="width: 100%; max-width: 400px;" Name="cityAddressNewCustomer" />
     </RadzenStack>
 

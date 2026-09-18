@@ -6,5 +6,7 @@ namespace CarolinaCaresPortal.Services
     public interface IMongoDbAccessService
     {
         ResponseStatus CreateCustomerRecord(Customer newCustomer);
+
+        ResponseStatus CreatePantryRecord(FoodPantry newPantry);
     }
 }
