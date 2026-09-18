@@ -42,7 +42,9 @@ namespace CarolinaCaresPortal.Services
 
                 FilterDefinitionBuilder<Customer> filterBuilder = Builders<Customer>.Filter;
                 FilterDefinition<Customer> filter = filterBuilder.Eq(g => g.LastName, newCustomer.LastName)
-                                                    & filterBuilder.Eq(h => h.FirstName, newCustomer.FirstName);
+                                                    & filterBuilder.Eq(g => g.FirstName, newCustomer.FirstName)
+                                                    & filterBuilder.Eq(g => g.PhoneNumber, newCustomer.PhoneNumber);
+
                 List<Customer> results = customers.Find(filter).ToList();
 
                 if (results.Count == 0) // no record found so create one
