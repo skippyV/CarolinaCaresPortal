@@ -3,7 +3,6 @@ using CarolinaCaresPortal.Shared;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
 using Serilog;
-using System.Xml.Linq;
 
 namespace CarolinaCaresPortal.Services
 {
@@ -41,10 +40,10 @@ namespace CarolinaCaresPortal.Services
             {
                 IMongoCollection<Customer> customers = iMongoDatabase!.GetCollection<Customer>(MongoDbAccessServiceConstants.CustomersCollectionName);
 
-                var filterBuilder = Builders<Customer>.Filter;
-                //var filter = filterBuilder.Eq(g => g.LastName, newCustomer.LastName) & filterBuilder.Eq(h => h.FirstName, newCustomer.FirstName);
-                var filter = filterBuilder.Eq(g => g.LastName, newCustomer.LastName) ;
-                var results = customers.Find(filter).ToList();
+                FilterDefinitionBuilder<Customer> filterBuilder = Builders<Customer>.Filter;
+                FilterDefinition<Customer> filter = filterBuilder.Eq(g => g.LastName, newCustomer.LastName)
+                                                    & filterBuilder.Eq(h => h.FirstName, newCustomer.FirstName);
+                List<Customer> results = customers.Find(filter).ToList();
 
                 if (results.Count == 0) // no record found so create one
                 {
