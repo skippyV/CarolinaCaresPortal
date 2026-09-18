@@ -1,0 +1,9 @@
+
+Must start the MongoDB server before starting the 
+webapp.
+
+	mongod --port 27017 --dbpath    D:\MongoDB\Server\8.3\data
+	
+	
+TODO:
+	alphabetical sorting request
