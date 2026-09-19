@@ -12,10 +12,18 @@
     <Template Context="pantry">
         <RadzenCard Variant="Variant.Outlined" class="rz-p-0" Style="width: 100%; overflow: hidden;">
             <RadzenRow class="rz-text-align-center" Gap="0">
+
                 <RadzenColumn Size="2" class="rz-p-4 rz-color-on-secondary-lighter rz-border rz-border-color-series-3" Style="--rz-border-width: 5px">
                     <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5">@(pantry.Name)</RadzenText>
                 </RadzenColumn>
 
+                <RadzenColumn Size="2" class="rz-p-4 rz-border rz-border-color-success" Style="--rz-border-width: 5px">
+                    <RadzenButton Text="Select" Click=@(args => SelectPantry(pantry.Id)) />
+                </RadzenColumn>
+
+                <RadzenColumn Size="2" class="rz-p-4 rz-border rz-border-color-success" Style="--rz-border-width: 5px">
+                    <RadzenButton Text="Delete" Click=@(args => DeletePantryRecord(pantry.Id)) />
+                </RadzenColumn>
 
             </RadzenRow>
         </RadzenCard>
@@ -27,6 +35,8 @@
 @code {
     bool allowVirtualization;
     string statusMessage = string.Empty;
+
+    FoodPantry? SelectedPantry;
 
     List<FoodPantry>? AllPantries { get; set; }
 
@@ -41,7 +51,7 @@
         // }
         // else
         // {
-             RetrieveListOfPantries();
+        RetrieveListOfPantries();
         // }
 
     }
@@ -49,5 +59,50 @@
     private void RetrieveListOfPantries()
     {
         AllPantries = _iMongoDbAccessService.GetFoodPantries();
+    }
+
+    private void SelectPantry(string pantryId)
+    {
+        // Before selecting we have to have the proper list generated
+        // for the current users
+        //  SelectedOpovEvent =
+        if (!string.IsNullOrEmpty(pantryId))
+        {
+            SelectedPantry = _iMongoDbAccessService.GetFoodPantryById(pantryId);
+            if (SelectedPantry is not null)
+            {
+                statusMessage = $"Selected Event: {SelectedPantry.Name}";
+            }
+            else
+            {
+                statusMessage = $"Warning! Selected Event is NULL!!";
+            }
+        }
+    }
+
+    private void DeletePantryRecord( string pantryId)
+    {
+        try
+        {
+            // var deleteResult = _iOpovDbAccessService.DeleteOpovEventAsync(eventId);
+            // deleteResult.Wait();  // executing .Wait() just 'hanged', so changed to 'await'
+            var deleteResult =  _iMongoDbAccessService.DeletePantryRecord(pantryId);
+            if (deleteResult.Success)
+            {
+                RetrieveListOfPantries();
+                StateHasChanged();
+                //   _NavigationManager.Refresh();
+            }
+            else
+            {
+                Log.Error("DeleteOpovEvent failed in AdminPanel");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex.Message);
+        }
+
     }
 }

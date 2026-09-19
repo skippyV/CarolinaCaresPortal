@@ -11,6 +11,10 @@ namespace CarolinaCaresPortal.Services
 
         List<FoodPantry> GetFoodPantries();
 
+        FoodPantry GetFoodPantryById(string pantryId);
+
+        ResponseStatus DeletePantryRecord(string pantryId);
+
         List<Customer> GetCustomers();
 
     }

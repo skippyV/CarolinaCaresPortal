@@ -142,6 +142,66 @@ namespace CarolinaCaresPortal.Services
                 return [];
             }
         }
+
+        public FoodPantry? GetFoodPantryById(string pantryId)
+        {
+            try
+            {
+                IMongoCollection<FoodPantry> PantriesCollection = iMongoDatabase!.GetCollection<FoodPantry>
+                    (MongoDbAccessServiceConstants.FoodPantriesCollectionName);
+
+                FilterDefinition<FoodPantry> filter = Builders<FoodPantry>.Filter.Eq(e => e.Id, pantryId);
+                List<FoodPantry> findResults = PantriesCollection.Find(filter).ToList();
+
+                if (findResults.Count == 1)
+                {
+                    return findResults.First();
+                }
+                else
+                {
+                    Log.Warning($"GetFoodPantryById returned {findResults.Count}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.Message);
+                Log.Error(ex.StackTrace!);
+            }
+
+            return null;
+        }
+
+        public ResponseStatus DeletePantryRecord(string pantryId)
+        {
+            ResponseStatus responseStatus = new(); // defaults to Success=false, DbActionStatus=DbInfoDetails.notApplicable
+
+            try
+            {
+                IMongoCollection<FoodPantry> PantriesCollection = iMongoDatabase!.GetCollection<FoodPantry>
+                    (MongoDbAccessServiceConstants.FoodPantriesCollectionName);
+
+                FilterDefinition<FoodPantry> findOpEventFilter = Builders<FoodPantry>.Filter.Eq(e => e.Id, pantryId);
+                DeleteResult deletePantryRecordResult = PantriesCollection.DeleteOne(findOpEventFilter);
+                if (deletePantryRecordResult.DeletedCount == 1)
+                {
+                    responseStatus.StatusMessage += " Pantry record was deleted.";
+                    responseStatus.Success = true;
+                }
+                else
+                {
+                    responseStatus.StatusMessage = $"Program Error No records matched in {nameof(MongoDbAccessService.DeletePantryRecord)}";
+                    responseStatus.DbActionStatus = DbInfoDetails.errorOccurred;
+                }
+            }
+            catch (Exception ex)
+            {
+                responseStatus.DbActionStatus = DbInfoDetails.errorOccurred;
+                responseStatus.StatusMessage = ex.Message + ":::" + ex.StackTrace;
+                Log.Error(responseStatus.StatusMessage);
+            }
+
+            return responseStatus;
+        }
     }
 
     public static class MongoDbAccessServiceConstants
