@@ -5,5 +5,7 @@ webapp.
 	mongod --port 27017 --dbpath    D:\MongoDB\Server\8.3\data
 	
 	
-TODO:
-	alphabetical sorting request
+TODO: Request : 
+	- new data point for customer attendance - done
+	- alphabetical sorting for search box for customers - TODO
+	- some sort of diaper selection and new database points - TODO

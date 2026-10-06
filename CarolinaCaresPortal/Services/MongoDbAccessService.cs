@@ -2,6 +2,7 @@
 using CarolinaCaresPortal.Shared;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
+using MongoDB.Driver.Core.Misc;
 using Serilog;
 
 namespace CarolinaCaresPortal.Services
@@ -13,26 +14,38 @@ namespace CarolinaCaresPortal.Services
 
         public MongoDbAccessService(MongoDbConfig config)
         {
-            using var loggerFactory = LoggerFactory.Create(b =>
+            try
             {
-                // b.AddConfiguration(configLogger);
-                b.AddSerilog();
-                //b.AddSimpleConsole();
-                b.SetMinimumLevel(LogLevel.Debug);
-            });
+                using var loggerFactory = LoggerFactory.Create(b =>
+                {
+                    // b.AddConfiguration(configLogger);
+                    b.AddSerilog();
+                    //b.AddSimpleConsole();
+                    b.SetMinimumLevel(LogLevel.Debug);
+                });
 
-            MongoClientSettings mongoClientSettings = MongoClientSettings.FromConnectionString(config.MongoDbConnectionString);
+                MongoClientSettings mongoClientSettings = MongoClientSettings.FromConnectionString(config.MongoDbConnectionString);
 
-            mongoClientSettings.LoggingSettings = new LoggingSettings(loggerFactory);
-            mongoClient = new MongoClient(mongoClientSettings);
-            iMongoDatabase = mongoClient.GetDatabase(config.CarolinaCaresCustomersDbName);
+                mongoClientSettings.LoggingSettings = new LoggingSettings(loggerFactory);
+                mongoClient = new MongoClient(mongoClientSettings);
+                iMongoDatabase = mongoClient.GetDatabase(config.CarolinaCaresCustomersDbName);
 
-            iMongoDatabase!.CreateCollection(MongoDbAccessServiceConstants.FoodPantriesCollectionName);
+                iMongoDatabase!.CreateCollection(MongoDbAccessServiceConstants.FoodPantriesCollectionName);
 
-            iMongoDatabase!.CreateCollection(MongoDbAccessServiceConstants.CustomersCollectionName);
+                iMongoDatabase!.CreateCollection(MongoDbAccessServiceConstants.CustomersCollectionName);
+            }
+            catch(Exception ex)
+            {
+                string errorMessage = "Exception in constructor of MongoDb service!Ensure MongoDb is running.";
+                Log.Error(errorMessage);
+                //throw new InvalidOperationException(errorMessage, ex);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            
         }
 
-        public ResponseStatus CreateCustomerRecord(Customer newCustomer)
+        public ResponseStatus CreateCustomer(Customer newCustomer)
         {
             ResponseStatus responseStatus = new(); // defaults to Success=false, DbActionStatus=DbInfoDetails.notApplicable
 
@@ -159,7 +172,7 @@ namespace CarolinaCaresPortal.Services
                 }
                 else
                 {
-                    Log.Warning($"GetFoodPantryById returned {findResults.Count}");
+                    Log.Warning($"{nameof(MongoDbAccessService.GetFoodPantryById)} returned {findResults.Count}");
                 }
             }
             catch (Exception ex)
@@ -180,8 +193,10 @@ namespace CarolinaCaresPortal.Services
                 IMongoCollection<FoodPantry> PantriesCollection = iMongoDatabase!.GetCollection<FoodPantry>
                     (MongoDbAccessServiceConstants.FoodPantriesCollectionName);
 
-                FilterDefinition<FoodPantry> findOpEventFilter = Builders<FoodPantry>.Filter.Eq(e => e.Id, pantryId);
-                DeleteResult deletePantryRecordResult = PantriesCollection.DeleteOne(findOpEventFilter);
+                FilterDefinition<FoodPantry> findFoodPantryFilter = Builders<FoodPantry>.Filter.Eq(e => e.Id, pantryId);
+
+                DeleteResult deletePantryRecordResult = PantriesCollection.DeleteOne(findFoodPantryFilter);
+
                 if (deletePantryRecordResult.DeletedCount == 1)
                 {
                     responseStatus.StatusMessage += " Pantry record was deleted.";
@@ -200,6 +215,126 @@ namespace CarolinaCaresPortal.Services
                 Log.Error(responseStatus.StatusMessage);
             }
 
+            return responseStatus;
+        }
+
+        public Customer GetCustomerById(string customerId)
+        {
+            try
+            {
+                IMongoCollection<Customer> CustomersCollection = iMongoDatabase!.GetCollection<Customer>
+                    (MongoDbAccessServiceConstants.CustomersCollectionName);
+
+                FilterDefinition<Customer> filter = Builders<Customer>.Filter.Eq(e => e.Id, customerId);
+                List<Customer> findResults = CustomersCollection.Find(filter).ToList();
+
+                if (findResults.Count == 1)
+                {
+                    return findResults.First();
+                }
+                else
+                {
+                    Log.Warning($"{nameof(MongoDbAccessService.GetCustomerById)} returned {findResults.Count}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.Message);
+                Log.Error(ex.StackTrace!);
+            }
+
+            return null;
+        }
+
+        public ResponseStatus DeleteCustomer(string customerId)
+        {
+            ResponseStatus responseStatus = new(); // defaults to Success=false, DbActionStatus=DbInfoDetails.notApplicable
+
+            try
+            {
+                IMongoCollection<Customer> CustomersCollection = iMongoDatabase!.GetCollection<Customer>
+                    (MongoDbAccessServiceConstants.CustomersCollectionName);
+
+                FilterDefinition<Customer> findCustomerFilter = Builders<Customer>.Filter.Eq(e => e.Id, customerId);
+
+                DeleteResult deleteCustomerResult = CustomersCollection.DeleteOne(findCustomerFilter); 
+
+                if (deleteCustomerResult.DeletedCount == 1)
+                {
+                    responseStatus.StatusMessage += " Customer record was deleted.";
+                    responseStatus.Success = true;
+                }
+                else
+                {
+                    responseStatus.StatusMessage = $"Program Error No records matched in {nameof(MongoDbAccessService.DeleteCustomer)}";
+                    responseStatus.DbActionStatus = DbInfoDetails.errorOccurred;
+                }
+            }
+            catch (Exception ex)
+            {
+                responseStatus.DbActionStatus = DbInfoDetails.errorOccurred;
+                responseStatus.StatusMessage = ex.Message + ":::" + ex.StackTrace;
+                Log.Error(responseStatus.StatusMessage);
+            }
+
+            return responseStatus;
+        }
+
+        public ResponseStatus UpdateCustomer(Customer customer)
+        {
+            ResponseStatus responseStatus = new(); // defaults to Success=false, DbActionStatus=DbInfoDetails.notApplicable
+
+            try
+            {
+                IMongoCollection<Customer> CustomersCollection = iMongoDatabase!.GetCollection<Customer>
+                    (MongoDbAccessServiceConstants.CustomersCollectionName);
+
+                FilterDefinition<Customer> findCustomerFilter = Builders<Customer>.Filter.Eq(e => e.Id, customer.Id);
+
+                ReplaceOneResult replaceResult = CustomersCollection.ReplaceOne(d => d.Id == customer.Id, customer);
+
+                if(replaceResult.ModifiedCount > 0)
+                {
+                    responseStatus.Success = true;
+                    responseStatus.StatusMessage = $"Customer {customer.FirstName} {customer.LastName} was updated";
+                }     
+                else
+                {
+                    responseStatus.StatusMessage = "Warning - no modifications made for ReplaceOne()";
+                    responseStatus.DbActionStatus= DbInfoDetails.noChangesMade;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                responseStatus.DbActionStatus = DbInfoDetails.errorOccurred;
+                responseStatus.StatusMessage = ex.Message + ":::" + ex.StackTrace;
+                Log.Error(responseStatus.StatusMessage);
+            }
+
+            return responseStatus;
+        }
+
+        public ResponseStatus IsMongoDbConnectionActive()
+        {
+            ResponseStatus responseStatus = new();
+            try
+            {
+                using IAsyncCursor<string> returnedCursor = mongoClient!.ListDatabaseNames();
+                bool returnedAny = returnedCursor.Any();
+                if (returnedAny)
+                {
+                    responseStatus.Success = true;
+                    responseStatus.DbActionStatus = DbInfoDetails.noChangesMade;
+                }
+            }
+            catch (Exception ex)
+            {
+                responseStatus.DbActionStatus = DbInfoDetails.errorOccurred;
+                responseStatus.StatusMessage = ex.Message + ":::" + ex.StackTrace;
+                Log.Error(responseStatus.StatusMessage);
+            }
+            
             return responseStatus;
         }
     }

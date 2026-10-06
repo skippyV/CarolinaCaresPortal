@@ -94,7 +94,7 @@
         customerAddress.StreetInfo = streetInfoAddressNewCustomer;
         customer.Address = customerAddress;        
 
-        ResponseStatus response = _iMongoDbAccessService.CreateCustomerRecord(customer);
+        ResponseStatus response = _iMongoDbAccessService.CreateCustomer(customer);
 
         statusMessage = response.StatusMessage;
         ClearNewCustomerFields();

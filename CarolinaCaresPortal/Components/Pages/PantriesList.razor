@@ -3,6 +3,8 @@
 @rendermode InteractiveServer
 @inject IMongoDbAccessService _iMongoDbAccessService
 
+@inject DialogService DialogService
+
 <h3>Pantries</h3>
 
 <RadzenDataList AllowVirtualization=@allowVirtualization Style="@(allowVirtualization ? "height:400px;overflow:auto;" : "")"
@@ -22,13 +24,64 @@
                 </RadzenColumn>
 
                 <RadzenColumn Size="2" class="rz-p-4 rz-border rz-border-color-success" Style="--rz-border-width: 5px">
-                    <RadzenButton Text="Delete" Click=@(args => DeletePantryRecord(pantry.Id)) />
+                    <RadzenButton Text="Delete" Click=@(args => ConfirmPantryDeleteAction(pantry.Id)) />
                 </RadzenColumn>
 
             </RadzenRow>
         </RadzenCard>
     </Template>
 </RadzenDataList>
+
+@if (SelectedPantry is not null)
+{
+    <h6>Selected Pantry</h6>
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start"
+                 JustifyContent="JustifyContent.Start" Gap="0.5rem"
+                 Style="width: 50%; max-width: 700px;"
+                 class="rz-p-sm-6 rz-border rz-border-color-success-dark">
+
+        <RadzenLabel Component="TextBoxBindPantryName">
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         AlignItems="AlignItems.Center"
+                         Gap="0.25rem"
+                         class="">
+                Name
+                <RadzenTextBox @bind-Value=@SelectedPantry.Name Style="width: 50%; max-width: 300px;" Name="TextBoxBindPantryName" />
+            </RadzenStack>
+        </RadzenLabel>
+
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start"
+                 JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-6 rz-border rz-border-primary">
+
+        <RadzenLabel Text="Street Info" Component="BindTextBoxBindAddressStreetInfo" Style="width: 50%">
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         AlignItems="AlignItems.Center"
+                         Gap="0.25rem">
+                Street Info
+                <RadzenTextBox @bind-Value=@SelectedPantry.Address.StreetInfo
+                               Name="BindTextBoxBindAddressStreetInfo" />
+            </RadzenStack>
+        </RadzenLabel>
+
+        <RadzenLabel Component="BindTextBoxBindAddressCity">
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         AlignItems="AlignItems.Center"
+                         Gap="0.25rem">
+                City
+                <RadzenTextBox @bind-Value=@SelectedPantry.Address.City
+                               Name="BindTextBoxBindAddressCity" />
+            </RadzenStack>
+        </RadzenLabel>
+
+    </RadzenStack>
+}
+else
+{
+    <p>No Pantry selected</p>
+}
 
 <p>@statusMessage</p>
 
@@ -65,22 +118,33 @@
     {
         // Before selecting we have to have the proper list generated
         // for the current users
-        //  SelectedOpovEvent =
+
         if (!string.IsNullOrEmpty(pantryId))
         {
             SelectedPantry = _iMongoDbAccessService.GetFoodPantryById(pantryId);
             if (SelectedPantry is not null)
             {
-                statusMessage = $"Selected Event: {SelectedPantry.Name}";
+                statusMessage = $"Selected Pantry: {SelectedPantry.Name}";
             }
             else
             {
-                statusMessage = $"Warning! Selected Event is NULL!!";
+                statusMessage = $"Warning! Selected Pantry is NULL!!";
             }
         }
     }
 
-    private void DeletePantryRecord( string pantryId)
+    private async Task ConfirmPantryDeleteAction(string pantryId)
+    {
+        var confirmationResult = await this.DialogService.Confirm("Are you sure?",
+                                                                  "Dialog Title",
+                                                                  new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirmationResult == true)
+        {
+            DeletePantry(pantryId);
+        }
+    }
+
+    private void DeletePantry( string pantryId)
     {
         try
         {
@@ -89,8 +153,8 @@
             var deleteResult =  _iMongoDbAccessService.DeletePantryRecord(pantryId);
             if (deleteResult.Success)
             {
-                RetrieveListOfPantries();
-                StateHasChanged();
+                RetrieveListOfPantries(); // reload list of pantries
+                ClearInputFields(); 
                 //   _NavigationManager.Refresh();
             }
             else
@@ -104,5 +168,12 @@
             Log.Error(ex.Message);
         }
 
+    }
+
+    private void ClearInputFields()
+    {
+        SelectedPantry = null;
+        statusMessage = "";
+        StateHasChanged();
     }
 }

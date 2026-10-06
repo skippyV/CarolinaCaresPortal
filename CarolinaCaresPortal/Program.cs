@@ -1,6 +1,7 @@
 using CarolinaCaresPortal.Components;
 using CarolinaCaresPortal.Data;
 using CarolinaCaresPortal.Services;
+using CarolinaCaresPortal.Shared;
 using Radzen;
 using Serilog;
 
@@ -54,7 +55,36 @@ namespace CarolinaCaresPortal
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
 
+            bool isConnected = CheckMongoDbServiceConnection(app);
+
+            if (!isConnected)
+            {
+                Log.Error("Check to ensure MongoDB service is running!");
+                Environment.Exit(-1);
+            }
+
             app.Run();
+        }
+
+        private static bool CheckMongoDbServiceConnection(WebApplication app)
+        {
+            bool isConnected = false;
+
+            using (var scope = app.Services.CreateScope())
+            {
+                // https://stackoverflow.com/questions/77904510/how-do-you-initialize-a-blazor-server-application-database-with-admin-user-on-ve
+
+                IServiceProvider services = scope.ServiceProvider;
+                IMongoDbAccessService _iMongoDbAccessService = services.GetRequiredService<IMongoDbAccessService>();
+
+                ResponseStatus response = _iMongoDbAccessService.IsMongoDbConnectionActive();
+                if(response is not null)
+                {
+                    isConnected = response.Success;
+                }
+            }
+
+            return isConnected;
         }
     }
 }

@@ -2,6 +2,13 @@
 
 @rendermode InteractiveServer
 @inject IMongoDbAccessService _iMongoDbAccessService
+@inject DialogService DialogService
+
+@* 
+    Radzen note: To align Labels and Icons wrap it again in a stack
+    https://forum.radzen.com/t/label-and-icon-vertical-alignment/21685 
+    https://forum.radzen.com/t/radzen-stack-component-wrap-option-is-not-working/15178 Wrap stuff
+*@
 
 <h3>Customers</h3>
 
@@ -12,15 +19,110 @@
     <Template Context="customer">
         <RadzenCard Variant="Variant.Outlined" class="rz-p-0" Style="width: 100%; overflow: hidden;">
             <RadzenRow class="rz-text-align-center" Gap="0">
+
                 <RadzenColumn Size="2" class="rz-p-4 rz-color-on-secondary-lighter rz-border rz-border-color-series-3" Style="--rz-border-width: 5px">
                     <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5">@(customer.FirstName) @(customer.LastName)</RadzenText>
                 </RadzenColumn>
 
+                
+                <RadzenColumn Size="2" class="rz-p-4 rz-border rz-border-color-success" Style="--rz-border-width: 5px">
+                    <RadzenButton Text="Select" Click=@(args => SelectCustomer(customer.Id)) />
+                </RadzenColumn>
+
+
+                <RadzenColumn Size="2" class="rz-p-4 rz-border rz-border-color-success" Style="--rz-border-width: 5px">
+                    <RadzenButton Text="Delete" Click=@(args => ConfirmCustomerDeleteAction(customer.Id)) />
+                </RadzenColumn>
 
             </RadzenRow>
         </RadzenCard>
     </Template>
 </RadzenDataList>
+
+@if(SelectedCustomer is not null)
+{
+    <h6>Selected Customer</h6>
+  
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" 
+                 JustifyContent="JustifyContent.Start" Gap="0.5rem" 
+                 Style="width: 50%; max-width: 700px;"
+                 class="rz-p-sm-6 rz-border rz-border-color-success-dark">
+
+        <RadzenLabel Component="TextBoxBindFirstName">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem" class="">
+                First Name
+                <RadzenTextBox @bind-Value=@SelectedCustomer.FirstName Style="width: 50%; max-width: 300px;" Name="TextBoxBindFirstName" />
+            </RadzenStack>
+        </RadzenLabel>
+
+        <RadzenLabel Component="TextBoxBindLastName">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem">
+                Last Name
+                <RadzenTextBox @bind-Value=@SelectedCustomer.LastName Style="width: 50%; max-width: 300px;" Name="TextBoxBindLastName" />
+            </RadzenStack>
+        </RadzenLabel>
+
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" 
+                 JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-6 rz-border rz-border-primary">
+        
+        <RadzenLabel Text="Street Info" Component="BindTextBoxBindAddressStreetInfo" Style="width: 50%">
+            <RadzenStack Orientation="Orientation.Horizontal" 
+                        AlignItems="AlignItems.Center" Gap="0.25rem">
+                Street Info
+                <RadzenTextBox @bind-Value=@SelectedCustomer.Address.StreetInfo 
+                                 Name="BindTextBoxBindAddressStreetInfo" />
+            </RadzenStack>
+        </RadzenLabel>
+       
+        <RadzenLabel  Component="BindTextBoxBindAddressCity"> 
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem" >
+                City
+                <RadzenTextBox @bind-Value=@SelectedCustomer.Address.City 
+                                 Name="BindTextBoxBindAddressCity" />
+            </RadzenStack>
+        </RadzenLabel>
+        
+    </RadzenStack>
+
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" 
+                JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        <RadzenLabel Text="Family Size" Component="BindFamilySizeCustomer" />
+        <RadzenNumeric Min="1"
+                       Max="9"
+                       @bind-Value=@SelectedCustomer.FamilySize
+                       InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "enter value" } })" Name="BindFamilySizeCustomer" />
+    </RadzenStack>
+
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" 
+                JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        
+        <RadzenLabel Text="Attending today" Component="CheckBoxIsPresent" class="rz-ms-2" />
+        <RadzenCheckBox @bind-Value=@isPresentToday Name="CheckBoxIsPresent" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" 
+                JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        <RadzenLabel Text="Last seen:" class="rz-ms-2" />
+        <RadzenLabel Text=@lastSeenText "></RadzenLabel>
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start"
+                 JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-4">
+        <RadzenLabel Text="Previously seen:" class="rz-ms-2" />
+        <RadzenLabel Text=@nextToLastSeenText ></RadzenLabel>
+    </RadzenStack>
+
+
+    <RadzenButton Text="Save Customer" Click=@(args => SaveSelectedCustomer()) />
+}
+else
+{
+    <p>No customer selected</p>
+}
 
 <p>@statusMessage</p>
 
@@ -28,7 +130,13 @@
     bool allowVirtualization;
     string statusMessage = string.Empty;
 
+    bool isPresentToday;
+    string lastSeenText = string.Empty;
+    string nextToLastSeenText = string.Empty;
+
     List<Customer>? AllCustomers { get; set; }
+
+    Customer? SelectedCustomer = null;
 
     [PersistentState]
     public bool? dejaVuFlag { get; set; }
@@ -41,13 +149,139 @@
         // }
         // else
         // {
-             RetrieveListOfCustomers();
+        RetrieveListOfCustomers();
         // }
 
+    }
+
+    private void SelectCustomer(string customerId)
+    {
+        // Before selecting we have to have the proper list generated
+        // for the current users
+
+        if (!string.IsNullOrEmpty(customerId))
+        {
+            SelectedCustomer = _iMongoDbAccessService.GetCustomerById(customerId);
+            if (SelectedCustomer is not null)
+            {
+                statusMessage = $"Selected Customer: {SelectedCustomer.FirstName}";
+
+                // last seen on date
+                DateOnly? retreivedDate = SelectedCustomer.GetLastAttendanceRecord();
+                if(retreivedDate is not null)
+                {
+                    lastSeenText = retreivedDate.ToString();
+                }
+
+                // previously seen on date
+                retreivedDate = SelectedCustomer.GetNextToLastAttendanceRecord();
+                if (retreivedDate is not null)
+                {
+                    nextToLastSeenText = retreivedDate.ToString();
+                }
+            }
+            else
+            {
+                statusMessage = $"Warning! Selected Customer is NULL!!";
+            }
+        }
     }
 
     private void RetrieveListOfCustomers()
     {
         AllCustomers = _iMongoDbAccessService.GetCustomers();
+    }
+
+
+    /// <summary>
+    /// Note: Had to complete Radzen setup by adding the following directive to MainLayout.razor
+    ///     <RadzenComponents @rendermode="InteractiveServer" />
+    ///     
+    /// To get the DialogService working as designed.
+    /// </summary>
+    /// <param name="customerId"></param>
+    /// <returns></returns>
+    private async Task ConfirmCustomerDeleteAction(string customerId)
+    {
+        var confirmationResult = await this.DialogService.Confirm("Are you sure?",
+                                                                  "Dialog Title",
+                                                                  new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirmationResult == true)
+        {
+            DeleteCustomer(customerId);
+        }
+    }
+
+    private void DeleteCustomer(string customerId)
+    {
+        try
+        {
+            // DialogService.Confirm("Are you sure?", "MyTitle", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+
+            // var deleteResult = _iOpovDbAccessService.DeleteOpovEventAsync(eventId);
+            // deleteResult.Wait();  // executing .Wait() just 'hanged', so changed to 'await'
+            var deleteResult = _iMongoDbAccessService.DeleteCustomer(customerId);
+            if (deleteResult.Success)
+            {
+                RetrieveListOfCustomers(); // reload list of customers
+                ClearInputFields();
+                //   _NavigationManager.Refresh();
+            }
+            else
+            {
+                Log.Error($"{nameof(CustomersList.DeleteCustomer)} failed!");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex.Message);
+        }
+
+    }
+
+    private void ClearInputFields()
+    {
+        SelectedCustomer = null;
+        statusMessage = "";
+        StateHasChanged();
+    }
+
+    private void SaveSelectedCustomer()
+    {
+        try
+        {
+            if (SelectedCustomer is not null)
+            {
+                if(isPresentToday)
+                {
+                    SelectedCustomer.AddAttendanceRecord(DateOnly.FromDateTime(DateTime.Now));
+                }
+
+                ResponseStatus updateResponse = _iMongoDbAccessService.UpdateCustomer(SelectedCustomer);
+
+                if (updateResponse.Success)
+                {
+                    RetrieveListOfCustomers();
+                    StateHasChanged(); // blank out fields
+                    //   _NavigationManager.Refresh();
+                    statusMessage = $"{SelectedCustomer.FirstName} {SelectedCustomer.LastName} changes saved";
+                }
+                else
+                {
+                    Log.Error($"{nameof(CustomersList.SaveSelectedCustomer)} failed!");
+                    statusMessage = $"{nameof(CustomersList.SaveSelectedCustomer)} failed!";
+                }
+            }
+            else
+            {
+                statusMessage = "No customer selected";
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex.Message);
+            statusMessage = ex.Message;
+        }
     }
 }
