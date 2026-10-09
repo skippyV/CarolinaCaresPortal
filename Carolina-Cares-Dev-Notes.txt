@@ -7,5 +7,6 @@ webapp.
 	
 TODO: Request : 
 	- new data point for customer attendance - done
+	- fix fields for Pantry edits and add SAVE button - TODO current
 	- alphabetical sorting for search box for customers - TODO
 	- some sort of diaper selection and new database points - TODO

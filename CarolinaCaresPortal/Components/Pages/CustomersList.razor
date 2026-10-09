@@ -269,8 +269,8 @@ else
                 }
                 else
                 {
-                    Log.Error($"{nameof(CustomersList.SaveSelectedCustomer)} failed!");
                     statusMessage = $"{nameof(CustomersList.SaveSelectedCustomer)} failed!";
+                    Log.Error(statusMessage);
                 }
             }
             else
@@ -280,7 +280,7 @@ else
         }
         catch (Exception ex)
         {
-            Log.Error(ex.Message);
+            Log.Error(ex.Message + ex.StackTrace);
             statusMessage = ex.Message;
         }
     }

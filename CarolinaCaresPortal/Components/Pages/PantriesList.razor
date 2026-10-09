@@ -56,7 +56,8 @@
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start"
                  JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-6 rz-border rz-border-primary">
 
-        <RadzenLabel Text="Street Info" Component="BindTextBoxBindAddressStreetInfo" Style="width: 50%">
+        <RadzenLabel Component="BindTextBoxBindAddressStreetInfo"
+                     Style="width: 50%">
             <RadzenStack Orientation="Orientation.Horizontal"
                          AlignItems="AlignItems.Center"
                          Gap="0.25rem">
@@ -77,6 +78,46 @@
         </RadzenLabel>
 
     </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start"
+                 JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-6 rz-border rz-border-primary">        
+
+        <RadzenLabel Style="width: 50%">
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         AlignItems="AlignItems.Center"
+                         Gap="0.25rem">
+                Days Of Week
+                <RadzenTextBox @bind-Value=@SelectedPantry.DayOfWeek />
+            </RadzenStack>
+        </RadzenLabel>
+
+        <RadzenLabel >
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         AlignItems="AlignItems.Center"
+                         Gap="0.25rem">
+                Time Of Day
+                <RadzenTextBox @bind-Value=@SelectedPantry.TimeOfDay />
+            </RadzenStack>
+        </RadzenLabel>
+
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start"
+                 JustifyContent="JustifyContent.Start" Gap="0.5rem" class="rz-p-sm-6 rz-border rz-border-primary">
+
+        <RadzenLabel Style="width: 50%">
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         AlignItems="AlignItems.Center"
+                         Gap="0.25rem">
+                Phone Number
+                <RadzenTextBox @bind-Value=@SelectedPantry.PhoneNumber />
+            </RadzenStack>
+        </RadzenLabel>
+
+    </RadzenStack>
+
+    
+    <RadzenButton Text="Save Pantry" Click=@(args => SaveSelectedPantry()) />
 }
 else
 {
@@ -175,5 +216,39 @@ else
         SelectedPantry = null;
         statusMessage = "";
         StateHasChanged();
+    }
+
+    private void SaveSelectedPantry()
+    {
+        try
+        {
+            if (SelectedPantry is not null)
+            {
+
+                ResponseStatus updateResponse = _iMongoDbAccessService.UpdatePantry(SelectedPantry);
+
+                if (updateResponse.Success)
+                {
+                    RetrieveListOfPantries();
+                    StateHasChanged(); // blank out fields
+                    //   _NavigationManager.Refresh();
+                    statusMessage = $"{SelectedPantry.Name} changes saved";
+                }
+                else
+                {                   
+                    statusMessage = $"{nameof(PantriesList.SaveSelectedPantry)} failed!";
+                    Log.Error(statusMessage);
+                }
+            }
+            else
+            {
+                statusMessage = "No Pantry selected";
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex.Message + ex.StackTrace);
+            statusMessage = ex.Message;
+        }
     }
 }

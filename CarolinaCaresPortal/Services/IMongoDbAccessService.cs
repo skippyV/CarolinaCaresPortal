@@ -11,6 +11,8 @@ namespace CarolinaCaresPortal.Services
 
         ResponseStatus UpdateCustomer(Customer customer);
 
+        ResponseStatus UpdatePantry(FoodPantry pantry);
+
         List<FoodPantry> GetFoodPantries();
 
         FoodPantry? GetFoodPantryById(string pantryId);

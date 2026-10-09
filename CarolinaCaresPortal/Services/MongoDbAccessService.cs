@@ -300,8 +300,43 @@ namespace CarolinaCaresPortal.Services
                 }     
                 else
                 {
-                    responseStatus.StatusMessage = "Warning - no modifications made for ReplaceOne()";
+                    responseStatus.StatusMessage = "Warning - no modifications made for UpdateCustomer()";
                     responseStatus.DbActionStatus= DbInfoDetails.noChangesMade;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                responseStatus.DbActionStatus = DbInfoDetails.errorOccurred;
+                responseStatus.StatusMessage = ex.Message + ":::" + ex.StackTrace;
+                Log.Error(responseStatus.StatusMessage);
+            }
+
+            return responseStatus;
+        }
+
+        public ResponseStatus UpdatePantry(FoodPantry pantry)
+        {
+            ResponseStatus responseStatus = new(); // defaults to Success=false, DbActionStatus=DbInfoDetails.notApplicable
+
+            try
+            {
+                IMongoCollection<FoodPantry> PantriesCollection = iMongoDatabase!.GetCollection<FoodPantry>
+                    (MongoDbAccessServiceConstants.FoodPantriesCollectionName);
+
+                FilterDefinition<Customer> findCustomerFilter = Builders<Customer>.Filter.Eq(e => e.Id, pantry.Id);
+
+                ReplaceOneResult replaceResult = PantriesCollection.ReplaceOne(d => d.Id == pantry.Id, pantry);
+
+                if (replaceResult.ModifiedCount > 0)
+                {
+                    responseStatus.Success = true;
+                    responseStatus.StatusMessage = $"Pantry {pantry.Name} was updated";
+                }
+                else
+                {
+                    responseStatus.StatusMessage = "Warning - no modifications made for UpdatePantry()";
+                    responseStatus.DbActionStatus = DbInfoDetails.noChangesMade;
                 }
 
             }
